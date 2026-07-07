@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "suavehooks": {
+      "command": "/path/to/SuaveHooks.Mcp",
+      "env": {
+        "SUAVEHOOKS_API_URL": "https://your-app.example.com",
+        "SUAVEHOOKS_API_KEY": "sh_your_api_key_here"
+      }
+    }
+  }
+}

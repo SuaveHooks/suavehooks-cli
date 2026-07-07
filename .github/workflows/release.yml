@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet build suavehooks-cli.sln -c Release
+
+  release-mcp:
+    needs: build
+    strategy:
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: linux-arm64
+            os: ubuntu-latest
+          - rid: osx-arm64
+            os: macos-latest
+          - rid: win-x64
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish MCP server
+        shell: bash
+        run: |
+          dotnet publish src/SuaveHooks.Mcp/SuaveHooks.Mcp.fsproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o publish/mcp-${{ matrix.rid }}
+
+      - name: Archive MCP binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd publish/mcp-${{ matrix.rid }}
+          tar czf ../../suavehooks-mcp-${{ matrix.rid }}.tar.gz *
+
+      - name: Archive MCP binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish/mcp-${{ matrix.rid }}/* -DestinationPath suavehooks-mcp-${{ matrix.rid }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mcp-${{ matrix.rid }}
+          path: suavehooks-mcp-${{ matrix.rid }}.*
+
+  release-cli:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package CLI tools
+        run: |
+          mkdir -p dist/suavehooks-cli
+          cp tools/*.sh dist/suavehooks-cli/
+          cp tools/mcp.json.example dist/suavehooks-cli/
+          chmod +x dist/suavehooks-cli/*.sh
+          tar czf suavehooks-cli.tar.gz -C dist suavehooks-cli
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-tools
+          path: suavehooks-cli.tar.gz
+
+  github-release:
+    needs: [release-mcp, release-cli]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download MCP linux-x64
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-linux-x64
+          path: artifacts/mcp-linux-x64
+
+      - name: Download MCP linux-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-linux-arm64
+          path: artifacts/mcp-linux-arm64
+
+      - name: Download MCP osx-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-osx-arm64
+          path: artifacts/mcp-osx-arm64
+
+      - name: Download MCP win-x64
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-win-x64
+          path: artifacts/mcp-win-x64
+
+      - name: Download CLI tools
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-tools
+          path: artifacts/cli-tools
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

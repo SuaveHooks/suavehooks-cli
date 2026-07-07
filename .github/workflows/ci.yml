@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build MCP server
+        run: dotnet build src/SuaveHooks.Mcp/SuaveHooks.Mcp.fsproj -c Release
+
+      - name: Build CLI
+        run: dotnet build src/SuaveHooks.Cli/SuaveHooks.Cli.fsproj -c Release
