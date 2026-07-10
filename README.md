@@ -14,7 +14,7 @@ This repository contains tools that run **on your machine** and talk to a SuaveH
 
 ## Downloads
 
-Pre-built binaries are attached to [GitHub Releases](https://github.com/ademar/suavehooks-cli/releases/latest):
+Pre-built binaries are attached to [GitHub Releases](https://github.com/SuaveHooks/suavehooks-cli/releases/latest):
 
 | Asset | Platform |
 |-------|----------|
