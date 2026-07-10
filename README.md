@@ -1,6 +1,6 @@
 # suavehooks-cli
 
-Public client tools for [SuaveHooks](https://github.com/ademar/SuaveHooks) — the hosted webhook capture platform.
+Public client tools for [SuaveHooks](https://suavehooks.com) — the hosted webhook capture platform.
 
 This repository contains tools that run **on your machine** and talk to a SuaveHooks deployment via the REST API. The platform itself is hosted separately; nothing here needs to be deployed to your server.
 
